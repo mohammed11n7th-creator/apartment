@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>حسابات الشقة</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --ink:#e5e7eb; --ink2:#cbd5e1;
+      --accent:#22c55e; --danger:#f00d0d; --warn:#f59e0b; --border:#263245; --focus:#60a5fa;
+      --input-bg:#0b1220;
+      --radius:14px;
+      --pad:14px;
+      --tap:48px;
+      --fs-1:clamp(18px,2.2vw,24px);
+      --fs-2:clamp(15px,1.8vw,18px);
+      --fs-3:clamp(13px,1.6vw,16px);
+    }
+    html[data-theme="light"]{
+      --bg:#f5f7fb; --panel:#ffffff; --muted:#4b5563; --ink:#0b1220; --ink2:#334155;
+      --accent:#16a34a; --danger:#dc2626; --warn:#d97706; --border:#d1d5db; --focus:#2563eb;
+      --input-bg:#ffffff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Naskh Arabic",Tahoma,Arial,sans-serif}
+    .wrap{max-width:1100px;margin:auto;padding:16px}
+    @media (min-width:768px){ .wrap{padding:20px} }
+
+    /* Top bar */
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .title h1{margin:0;font-size:var(--fs-1)}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{
+      cursor:pointer;border-radius:12px;border:1px solid var(--border);padding:10px 14px;background:var(--panel);color:var(--ink);
+      min-height:var(--tap); transition:.15s;
+    }
+    .btn:focus{outline:2px solid var(--focus);outline-offset:2px}
+    .btn-danger{background:linear-gradient(90deg,var(--danger),#b91c1c);border:none;color:#fff}
+    .btn-accent{background:linear-gradient(90deg,var(--accent),#16a34a);border:none;color:#fff}
+
+    /* Cards */
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:var(--pad);box-shadow:0 8px 20px rgba(0,0,0,.08);margin-top:14px}
+    .card header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+    .card h2{margin:0;font-size:var(--fs-2)}
+    .hr{height:1px;background:var(--border);border:0;margin:12px 0}
+
+    /* Form grid */
+    .grid{display:grid;gap:12px}
+    .g-3{grid-template-columns:repeat(3,1fr)}
+    @media (max-width:900px){.g-3{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:640px){.g-3{grid-template-columns:1fr}}
+
+    .field{display:flex;flex-direction:column;gap:6px}
+    .label{font-size:12px;color:var(--muted)}
+    .input,.select{
+      background:var(--input-bg); color:var(--ink); border:1px solid var(--border);
+      border-radius:12px; padding:12px; font:inherit; outline:none; min-height:var(--tap);
+    }
+    .input:focus,.select:focus{border-color:var(--focus);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* Tables → Responsive Cards */
+    table{width:100%;border-collapse:collapse;font-size:var(--fs-3)}
+    th,td{padding:10px 8px;border-bottom:1px dashed var(--border);text-align:center;vertical-align:middle}
+    th{color:var(--muted);font-weight:600}
+    .mono{font-family:ui-monospace,Menlo,monospace}
+    .t-start{text-align:start}
+    .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    @media (max-width:820px){ .sum{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:480px){ .sum{grid-template-columns:1fr} }
+
+    .pill{padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--border)}
+    .good{color:#16a34a}.bad{color:#dc2626}.zero{color:var(--warn)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:var(--input-bg)}
+
+    /* Mobile table stack */
+    @media (max-width:640px){
+      .table-responsive thead{display:none}
+      .table-responsive tbody, .table-responsive tr, .table-responsive td{display:block;width:100%}
+      .table-responsive tr{border:1px solid var(--border);border-radius:12px;padding:8px;background:var(--panel);margin-bottom:10px}
+      .table-responsive td{border:0;border-bottom:1px dashed var(--border);padding:8px 6px}
+      .table-responsive td:last-child{border-bottom:0}
+      .table-responsive td::before{
+        content:attr(data-th);
+        float:inline-start; color:var(--muted); font-size:12px; margin-inline-end:8px;
+      }
+      .table-actions{display:flex;justify-content:flex-end}
+    }
+
+    /* Improve touch spacing on mobile */
+    @media (max-width:640px){
+      .btn{width:100%}
+      .toolbar{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="title"><h1>حسابات الشقة</h1></div>
+      <div class="toolbar">
+        <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
+          <input type="checkbox" id="themeToggle" aria-label="تبديل الوضع" />
+          <span>وضع نهاري/ليلي</span>
+        </label>
+        <button class="btn btn-danger" id="wipe">مسح الكل</button>
+      </div>
+    </div>
+
+    <!-- 1) إضافة مصروف -->
+    <section class="card">
+      <header><h2>١) إضافة مصروف</h2></header>
+      <div class="grid g-3">
+        <div class="field">
+          <label class="label">الدافع</label>
+          <select id="payer" class="select">
+            <option>أحمد</option><option selected>محمد</option><option>علي</option><option>مرتضى</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label">المبلغ (IQD)</label>
+          <input type="number" id="amount" class="input" min="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label class="label">التاريخ</label>
+          <input type="date" id="date" class="input" />
+        </div>
+        <div class="field">
+          <label class="label">اليوم</label>
+          <input type="text" id="weekday" class="input" disabled />
+        </div>
+        <div class="field">
+          <label class="label">الوصف</label>
+          <input type="text" id="desc" class="input" />
+        </div>
+        <div class="field">
+          <label class="label">الفئة</label>
+          <select id="category" class="select">
+            <option value="auto" selected>تلقائي</option>
+            <option value="زبادي">زبادي</option>
+            <option value="خبز">خبز</option>
+            <option value="تمن">تمن</option>
+            <option value="غاز">غاز</option>
+            <option value="إيجار">إيجار</option>
+            <option value="مولد">مولد</option>
+            <option value="كهرباء">كهرباء</option>
+            <option value="تنظيف">تنظيف</option>
+            <option value="إنترنت">إنترنت</option>
+            <option value="عام">عام</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn btn-accent" id="addExpense">إضافة</button>
+      </div>
+
+      <div class="hr"></div>
+      <div style="overflow:auto;max-height:60vh">
+        <table id="expensesTable" class="table-responsive">
+          <thead>
+            <tr><th>#</th><th>التاريخ</th><th>اليوم</th><th>الدافع</th><th>الوصف</th><th>الفئة</th><th>المبلغ</th><th>المشمُولون</th><th>حصة الفرد</th><th>حذف</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2) من ← إلى -->
+    <section class="card">
+      <header><h2>٢) من ← إلى</h2></header>
+      <div class="grid g-3">
+        <div class="field">
+          <label class="label">من</label>
+          <select id="fromP" class="select"><option>أحمد</option><option selected>محمد</option><option>علي</option><option>مرتضى</option></select>
+        </div>
+        <div class="field">
+          <label class="label">إلى</label>
+          <select id="toP" class="select"><option>أحمد</option><option>محمد</option><option selected>علي</option><option>مرتضى</option></select>
+        </div>
+        <div class="field">
+          <label class="label">المبلغ (IQD)</label>
+          <input type="number" id="ftAmount" class="input" min="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label class="label">التاريخ</label>
+          <input type="date" id="ftDate" class="input" />
+        </div>
+        <div class="field">
+          <label class="label">الوصف</label>
+          <input type="text" id="ftDesc" class="input" />
+        </div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn btn-accent" id="addFT">إضافة</button>
+      </div>
+
+      <div class="hr"></div>
+      <div style="overflow:auto;max-height:60vh">
+        <table id="ftTable" class="table-responsive">
+          <thead><tr><th>#</th><th>التاريخ</th><th>من</th><th>إلى</th><th>المبلغ</th><th>الوصف</th><th>حذف</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3) النتائج -->
+    <section class="card">
+      <header>
+        <h2>٣) النتائج الموحّدة</h2>
+        <button class="btn" id="recalc">إعادة الحساب</button>
+      </header>
+
+      <div class="sum" id="totals"></div>
+
+      <div class="hr"></div>
+      <div id="settlements" class="mono"></div>
+    </section>
+  </div>
+
+  <script>
+  const PEOPLE = ["أحمد","محمد","علي","مرتضى"];
+  const STORAGE_KEY = "apt-split-v6-responsive";
+  const $ = s => document.querySelector(s);
+  const fmt = n => Number(n).toLocaleString('ar-IQ');
+  const todayISO = ()=> new Date().toISOString().slice(0,10);
+
+  // Theme toggle
+  (function initTheme(){
+    const saved = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", saved);
+    $("#themeToggle").checked = (saved==="light");
+    $("#themeToggle").addEventListener("change", ()=>{
+      const mode = $("#themeToggle").checked ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", mode);
+      localStorage.setItem("theme", mode);
+    });
+  })();
+
+  // Arabic normalize + synonyms (with Gas)
+  const normalizeArabic = (s="")=>{
+    return s.toLowerCase()
+      .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g,"")
+      .replace(/[آأإٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+      .replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/گ/g,"ك").replace(/چ/g,"ج")
+      .replace(/[^\u0600-\u06FFa-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+  };
+
+  const THESAURUS = {
+    "زبادي": ["زبادي","لبن زبادي","لبن روب","روب","يوغرت","yogurt","لبن","لبنه"],
+    "خبز": ["خبز","صمون","صمونه","خبزه","عيش","تنور","رقاق","خبز تنور","bread"],
+    "تمن": ["تمن","تمـن","رز","ارز","أرز","بسمتي","عنبر","rice","برياني(رز)","قوزي(رز)"],
+    "غاز": ["غاز","قنينه غاز","قنينة غاز","اسطوانه غاز","اسطوانة غاز","تبديل غاز","gas","غاز الطبخ"],
+    "إيجار": ["ايجار","إيجار","اجار","كراء","rent","اجرة بيت","اجرة شقه","بدل ايجار"],
+    "مولد": ["مولد","مولّد","اشتراك مولد","سحب مولد","مولده","مولدة","مولد محله","مولد اهل"],
+    "كهرباء": ["كهرباء","فاتورة كهرباء","وطنية","الوطنية","امبير حكومي","اشتراك كهرباء","قيمة كهرباء","عداد","national electricity"],
+    "تنظيف": ["تنظيف","نظافه","كنس","جمع نفايات","قمامه","زباله","cleaning","trash"],
+    "إنترنت": ["انترنت","إنترنت","نت","واي فاي","wifi","اشتراك نت","تعبئه نت","فايبر","fiber","dsl"]
+  };
+
+  const LOOKUP = (()=>{
+    const map=new Map();
+    Object.entries(THESAURUS).forEach(([cat,words])=>{
+      words.forEach(w=>{
+        const n = normalizeArabic(w);
+        map.set(n,cat);
+        n.split(" ").forEach(tok=>{ if(tok.length>1) map.set(tok,cat); });
+      });
+    });
+    return map;
+  })();
+
+  function inferCategory(text, selected){
+    if(selected && selected!=="auto") return selected;
+    const norm = normalizeArabic(text||"");
+    if(!norm) return "عام";
+    for(const [cat, words] of Object.entries(THESAURUS)){
+      if(words.some(w=> norm.includes(normalizeArabic(w)))) return cat;
+    }
+    for(const tok of norm.split(" ")){ if(LOOKUP.has(tok)) return LOOKUP.get(tok); }
+    return "عام";
+  }
+
+  function parseWeekday(dateStr){
+    if(!dateStr) return {name:"—", idx:-1};
+    const d = new Date(dateStr+"T12:00:00");
+    const idx = d.getDay();
+    const names = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+    return {name:names[idx], idx};
+  }
+
+  // Inclusion rules (Gas in special)
+  function includedPeople({weekdayIdx, category}){
+    let inc = new Set(PEOPLE);
+    if(category==="زبادي") inc.delete("محمد");
+    if(category==="خبز" || category==="تمن") inc.delete("مرتضى");
+    const special = new Set(["إيجار","مولد","كهرباء","تنظيف","إنترنت","غاز"]);
+    if([3,4,5,6].includes(weekdayIdx) && !special.has(category)){
+      inc.delete("أحمد");
+    }
+    if(inc.size===0) inc = new Set(PEOPLE);
+    return Array.from(inc);
+  }
+
+  // Integer IQD math
+  const toIQDint = v => Math.round(Number(v||0));
+  const fromIQDint = v => Number(v||0);
+
+  function splitInt(totalInt, members){
+    const n = members.length;
+    if(n<=0) return {per:{}, remainder:0};
+    const base = Math.floor(totalInt / n);
+    let rem = totalInt - base*n;
+    const per = {};
+    members.forEach((m,i)=> per[m] = base + (i<rem?1:0) );
+    return {per, remainder: totalInt - Object.values(per).reduce((a,b)=>a+b,0)};
+  }
+
+  let state = load() ?? { expenses:[], transfers:[] };
+
+  function render(){
+    // مصاريف
+    const tb = $("#expensesTable tbody"); tb.innerHTML="";
+    state.expenses.forEach((e,idx)=>{
+      const perPerson = Math.floor(e.amount / e.included.length);
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td data-th="#">${idx+1}</td>
+        <td data-th="التاريخ">${e.date}</td>
+        <td data-th="اليوم">${e.weekday}</td>
+        <td data-th="الدافع">${e.payer}</td>
+        <td data-th="الوصف" class="t-start">${escapeHtml(e.desc)}</td>
+        <td data-th="الفئة">${e.category}</td>
+        <td data-th="المبلغ" class="mono">${fmt(fromIQDint(e.amount))}</td>
+        <td data-th="المشمُولون" class="t-start">${e.included.join("، ")}</td>
+        <td data-th="حصة الفرد" class="mono">${fmt(perPerson)}</td>
+        <td data-th="حذف" class="table-actions"><button class="btn" data-del-exp="${idx}">حذف</button></td>
+      `;
+      tb.appendChild(tr);
+    });
+
+    // تحويلات
+    const tbf = $("#ftTable tbody"); tbf.innerHTML="";
+    state.transfers.forEach((t,idx)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td data-th="#">${idx+1}</td>
+        <td data-th="التاريخ">${t.date}</td>
+        <td data-th="من">${t.from}</td>
+        <td data-th="إلى">${t.to}</td>
+        <td data-th="المبلغ" class="mono">${fmt(fromIQDint(t.amount))}</td>
+        <td data-th="الوصف" class="t-start">${escapeHtml(t.desc||"")}</td>
+        <td data-th="حذف" class="table-actions"><button class="btn" data-del-ft="${idx}">حذف</button></td>
+      `;
+      tbf.appendChild(tr);
+    });
+
+    // نتائج
+    const {totals, settlements} = computeAll();
+
+    const box = $("#totals"); box.innerHTML="";
+    PEOPLE.forEach(p=>{
+      const t = totals[p];
+      const cls = t.net>0?'good':t.net<0?'bad':'zero';
+      const status = t.net>0 ? 'يطلب' : (t.net<0 ? 'مدان (عليه دين)' : 'متزن');
+      const div = document.createElement("div");
+      div.className = "pill";
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>${p}</strong>
+          <span class="badge ${cls}">${status}</span>
+        </div>
+        <div class="grid g-3" style="margin-top:6px">
+          <div><div class="label">دفع</div><div class="mono">${fmt(t.paid)}</div></div>
+          <div><div class="label">عليه</div><div class="mono">${fmt(t.owed)}</div></div>
+          <div><div class="label">الصافي</div><div class="mono ${cls}">${fmt(t.net)}</div></div>
+        </div>
+      `;
+      box.appendChild(div);
+    });
+
+    const st = $("#settlements");
+    st.innerHTML = settlements.length ? settlements.map(s=>`<div>• ${escapeHtml(s)}</div>`).join("") : "<div>لا توجد ديون.</div>";
+
+    save();
+  }
+
+  // In transfers: From owes, To is paid.
+  function computeAll(){
+    const totals = Object.fromEntries(PEOPLE.map(p=>[p,{paid:0,owed:0,net:0}]));
+
+    state.expenses.forEach((e)=>{
+      const {per} = splitInt(e.amount, e.included);
+      Object.entries(per).forEach(([person,share])=> totals[person].owed += share );
+      totals[e.payer].paid += e.amount;
+    });
+
+    state.transfers.forEach((t)=>{
+      totals[t.from].owed += t.amount;
+      totals[t.to].paid  += t.amount;
+    });
+
+    PEOPLE.forEach(p=> totals[p].net = totals[p].paid - totals[p].owed );
+
+    const settlements = suggestSettlements(totals);
+    return {totals, settlements};
+  }
+
+  function suggestSettlements(totals){
+    const creditors=[], debtors=[];
+    PEOPLE.forEach(p=>{
+      const n = totals[p].net;
+      if(n>0) creditors.push({p, amt:n});
+      else if(n<0) debtors.push({p, amt:-n});
+    });
+    creditors.sort((a,b)=>b.amt-a.amt);
+    debtors.sort((a,b)=>b.amt-a.amt);
+
+    const moves=[];
+    let i=0,j=0;
+    while(i<debtors.length && j<creditors.length){
+      const d=debtors[i], c=creditors[j];
+      const pay = Math.min(d.amt, c.amt);
+      moves.push(`${d.p} يدفع إلى ${c.p}: ${fmt(pay)} IQD`);
+      d.amt -= pay; c.amt -= pay;
+      if(d.amt===0) i++;
+      if(c.amt===0) j++;
+    }
+    return moves;
+  }
+
+  $("#date").addEventListener("input", e=> $("#weekday").value = parseWeekday(e.target.value).name );
+
+  $("#addExpense").addEventListener("click", ()=>{
+    const payer = $("#payer").value;
+    const amount = toIQDint($("#amount").value);
+    const date = $("#date").value || todayISO();
+    const {name:weekday, idx:weekdayIdx} = parseWeekday(date);
+    const desc = $("#desc").value.trim();
+    const category = inferCategory(desc, $("#category").value);
+    if(!payer || !amount || amount<=0) return;
+
+    const included = includedPeople({weekdayIdx, category});
+    state.expenses.push({payer, amount, date, weekday, weekdayIdx, desc, category, included});
+
+    $("#amount").value=""; $("#desc").value=""; $("#weekday").value=weekday;
+    render();
+  });
+
+  $("#addFT").addEventListener("click", ()=>{
+    const from = $("#fromP").value;
+    const to   = $("#toP").value;
+    const amount = toIQDint($("#ftAmount").value);
+    const date = $("#ftDate").value || todayISO();
+    const desc = $("#ftDesc").value.trim();
+    if(from===to || !amount || amount<=0) return;
+
+    state.transfers.push({from,to,amount,date,desc});
+    $("#ftAmount").value=""; $("#ftDesc").value="";
+    render();
+  });
+
+  document.addEventListener("click", (e)=>{
+    const b1 = e.target.closest("button[data-del-exp]");
+    if(b1){ const i=+b1.dataset.delExp; state.expenses.splice(i,1); render(); }
+    const b2 = e.target.closest("button[data-del-ft]");
+    if(b2){ const i=+b2.dataset.delFt; state.transfers.splice(i,1); render(); }
+  });
+
+  $("#recalc").addEventListener("click", render);
+
+  $("#wipe").addEventListener("click", ()=>{
+    if(confirm("مسح جميع البيانات؟")){ state = {expenses:[], transfers:[]}; render(); }
+  });
+
+  function escapeHtml(s){return (s??"").replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+  function load(){ try{ const s=localStorage.getItem(STORAGE_KEY); return s?JSON.parse(s):null }catch{ return null } }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  (function init(){
+    $("#date").value = todayISO();
+    $("#weekday").value = parseWeekday($("#date").value).name;
+    render();
+  })();
+  </script>
+</body>
+</html>
